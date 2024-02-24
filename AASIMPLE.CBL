@@ -28,14 +28,11 @@
 
 
        01 ATTACKARMY
-           02 TROOPS OCCURS 14 TIMES.
-      * In order as appears on unit card
-      * Infantry, Artillery, Tank, AAgun, Fighter, Bomber, Submarine, Transport,
-      * Destroyer, Cruiser, ACCarier, Battleship
-               03 TROOPCOUNT PIC 99
+           02 TROOPS PIC 999 OCCURS 14 TIMES.
            02 POLICY PIC 99 OCCURS 14 TIMES.
-           02 SPECIAL PIC X
-      * Whether tech advancements have been made which affect unit strength/cost
+           02 SPECIAL.
+               03 LEAVE1LAND PIC X.
+                   88 LEAVE1LAND-TRUE VALUE 'Y'.
                03 AARTILLERY PIC X.
                    88 AARTILLERY-TRUE VALUE 'Y'.
                03 SSUBMARINE PIC X.
@@ -50,12 +47,11 @@
                    88 HEAVYBOMBR-TRUE VALUE 'Y'.
 
        01 DEFENDARMY
-           02 TROOPS OCCURS 14 TIMES.
-               03 TROOPCOUNT PIC 99
+           02 TROOPS PIC 999 OCCURS 14 TIMES.
            02 POLICY PIC 99 OCCURS 14 TIMES.
            02 SPECIAL.
-               03 AMPHIBIOUS PIC X.
-                   88 AMPHIBIOUS-TRUE VALUE 'Y'.
+               03 LEAVE1LAND PIC X.
+                   88 LEAVE1LAND-TRUE VALUE 'Y'.
                03 AARTILLERY PIC X.
                    88 AARTILLERY-TRUE VALUE 'Y'.
                03 SSUBMARINE PIC X.
@@ -70,10 +66,11 @@
                    88 HEAVYBOMBR-TRUE VALUE 'Y'.
 
        01 ARMYINUSE
-           02 TROOPS OCCURS 14 TIMES.
-               03 TROOPCOUNT PIC 99
+           02 TROOPS PIC 999 OCCURS 14 TIMES.
            02 POLICY PIC 99 OCCURS 14 TIMES.
            02 SPECIAL.
+               03 LEAVE1LAND PIC X.
+                   88 LEAVE1LAND-TRUE VALUE 'Y'.
                03 AARTILLERY PIC X.
                    88 AARTILLERY-TRUE VALUE 'Y'.
                03 SSUBMARINE PIC X.
@@ -87,9 +84,12 @@
                03 HEAVYBOMBR PIC X.
                    88 HEAVYBOMBR-TRUE VALUE 'Y'.
 
-       77 CHOOSEVAR PIC 9.
-       77 IDX       PIC 99.
-       77 UIDX      PIC 99.
+       77 CHOOSEVAR     PIC 99.
+       77 MAINCHOOSEVAR PIC 99 VALUE 1.
+       77 ARMYCHOOSEVAR PIC 99 VALUE 1.
+       77 BATTCHOOSEVAR PIC 99 VALUE 1.
+       77 IDX           PIC 99.
+       77 UIDX          PIC 99.
 
        02 YNVAR PIC X.
            88 YNVAL YNVAL 'Y'
@@ -110,39 +110,107 @@
        MOVE '2HP BATTLESHIP' TO UNITS(13)
        MOVE '1HP BATTLESHIP' TO UNITS(14)
 
+       PERFORM MAIN UNTIL MAINCHOOSEVAR = 0.
+
        MAIN.
+            DISPLAY "0. EXIT PROGRAM"
+            DISPLAY "1. ATTACKING ARMY MENU"
+            DISPLAY "2. DEFENDING ARMY MENU"
+            DISPLAY "3. SWAP ATTACKING AND DEFENDING ARMIES"
+            DISPLAY "4. BATTLE MENU"
+            DISPLAY "> "
+            ACCEPT MAINCHOOSEVAR.
+
+            EVALUATE MAINCHOOSEVAR
+                WHEN 1
+                    SET ARMYCHOOSEVAR TO 1
+                    MOVE ATTACKARMY TO ARMYINUSE
+                    PERFORM ARMYMENU UNTIL ARMYCHOOSEVAR = 0
+                    MOVE ARMYINUSE TO ATTACKARMY
+                WHEN 2
+                    SET ARMYCHOOSEVAR TO 1
+                    MOVE DEFENDARMY TO ARMYINUSE
+                    PERFORM ARMYMENU UNTIL ARMYCHOOSEVAR = 0
+                    MOVE ARMYINUSE TO DEFENDARMY
+                WHEN 3
+                    MOVE DEFENDARMY TO ARMYINUSE
+                    MOVE ATTACKARMY TO DEFENDARMY
+                    MOVE ARMYINUSE TO ATTACKARMY
+                    DISPLAY "ARMIES SWITCHED"
+                WHEN 4
+                    SET BATTCHOOSEVAR TO 1
+                    PERFORM BATTLEMENU UNTIL BATTCHOOSEVAR = 0
+            END EVALUATE.
+
+
+       ARMYMENU.
+         DISPLAY "0. GO BACK"
+         DISPLAY "1. BUILD ARMY MANUALLY"
+         DISPLAY "2. LOAD FROM FILE (COMING SOON)"
+         DISPLAY "3. SAVE TO FILE (COMING SOON)"
+         DISPLAY "4. VIEW ARMY TROOPCOUNTS"
+         DISPLAY "5. VIEW ARMY TECHNOLOGY/SPECIAL POLICIES"
+         DISPLAY "6. VIEW ARMY REMOVAL PRIORITIZATION ORDER"
+         DISPLAY "7. EDIT ARMY TROOPCOUNTS"
+         DISPLAY "8. EDIT ARMY TECHNOLOGY/SPECIAL POLICIES"
+         DISPLAY "9. EDIT ARMY REMOVAL PRIORITIZATION ORDER"
+         DISPLAY "> ".
+         ACCEPT ARMYCHOOSEVAR.
+
+         EVALUATE ARMYCHOOSEVAR
+            WHEN 1
+                PERFORM BUILDARMY
+            WHEN 4
+                PERFORM PRINTARMYUNITS
+            WHEN 5
+                PERFORM PRINTSPECIAL
+            WHEN 6
+                PERFORM PRINTARMYORDER
+            WHEN 7
+                PERFORM GETUNITS
+            WHEN 8
+                PERFORM GETSPECIAL
+            WHEN 9
+                PERFORM GETORDER
+        END-EVALUATE.
 
 
        BUILDARMY.
-           DISPLAY "ENTER TECHNOLOGICAL ADVANCES REACHED"
+           PERFORM GETUNITS.
            PERFORM GETSPECIAL.
-           DISPLAY "ENTER UNIT NUMBER VALUES"
-           PERFORM GETUNITS VARYING IDX FROM 1 BY 1 UNTIL IDX > 14.
            PERFORM GETORDER.
 
        GETSPECIAL.
-           DISPLAY "ADVANCED ARTILLERY ACHIEVED? (Y/N)"
+           DISPLAY "LEAVE ONE LAND UNIT ALIVE AT ALL COSTS (NEEDED FOR
+      -    "CAPTURING LAND TERRITORY)? (Y/N)"
            DISPLAY "> "
+           ACCEPT  LEAVE1LAND IN ARMYINUSE.
+           DISPLAY "ENTER TECHNOLOGICAL ADVANCES REACHED"
+           DISPLAY "ADVANCED ARTILLERY ACHIEVED? (Y/N)".
+           DISPLAY "> ".
            ACCEPT AARTILLERY IN ARMYINUSE.
-           DISPLAY "SUPER SUBMARINES ACHIEVED? (Y/N)"
-           DISPLAY "> "
+           DISPLAY "SUPER SUBMARINES ACHIEVED? (Y/N)".
+           DISPLAY "> ".
            ACCEPT SSUBMARINE IN ARMYINUSE.
-           DISPLAY "BETTER JET FIGHTERS ACHIEVED? (Y/N)"
-           DISPLAY "> "
+           DISPLAY "BETTER JET FIGHTERS ACHIEVED? (Y/N)".
+           DISPLAY "> ".
            ACCEPT JETFIGHTER IN ARMYINUSE.
-           DISPLAY "IMPROVED SHIPYARDS ACHIEVED? (Y/N)"
-           DISPLAY "> "
+           DISPLAY "IMPROVED SHIPYARDS ACHIEVED? (Y/N)".
+           DISPLAY "> ".
            ACCEPT IMPRVDSHIP IN ARMYINUSE.
-           DISPLAY "AA GUN RADAR ACHIEVED? (Y/N)"
-           DISPLAY "> "
+           DISPLAY "AA GUN RADAR ACHIEVED? (Y/N)".
+           DISPLAY "> ".
            ACCEPT AAGUNRADAR IN ARMYINUSE.
-           DISPLAY "HEAVY BOMBERS ACHIEVED? (Y/N)"
-           DISPLAY "> "
+           DISPLAY "HEAVY BOMBERS ACHIEVED? (Y/N)".
+           DISPLAY "> ".
            ACCEPT HEAVYBOMBR IN ARMYINUSE.
 
 
        GETUNITS.
-           DISPLAY "HOW MANY"UNITS(IDX)"UNITS? "
+           DISPLAY "ENTER UNIT TROOPCOUNT VALUES".
+           PERFORM GETUNIT-HELPER VARYING IDX FROM 1 BY 1 UNTIL IDX > 14.
+       GETUNIT-HELPER.
+           DISPLAY "HOW MANY " UNITS(IDX)" UNITS? ".
            DISPLAY "> "
            ACCEPT TROOPS(IDX) IN ARMYINUSE
 
@@ -185,9 +253,58 @@
                 PERFORM MANENTHELPER
            END-IF.
 
+       PRINTARMYUNITS.
+            PERFORM VARYING IDX FROM 1 BY 1 UNTIL IDX > 14
+                DISPLAY "NUMBER OF " UNITS(IDX) ": " TROOPS(IDX) IN ARMYINUSE
+            END-PERFORM.
+
+       PRINTARMYORDER.
+            DISPLAY "ORDER OF TROOPS TO REMOVE"
+            PERFORM VARYING IDX FROM 1 BY 1 UNTIL IDX > 14
+                DISPLAY IDX ". " TROOPS(POLICY(IDX))
+            END-PERFORM.
+
+       PRINTSPECIAL.
+            IF LEAVE1LAND-TRUE IN ARMYINUSE
+                DISPLAY "1 LAND UNIT WILL BE KEPT ALIVE AT ALL COSTS"
+            END-IF.
+            DISPLAY "TECHNOLOGY:"
+            IF AARTILLERY-TRUE IN ARMYINUSE
+                DISPLAY "ADVANCED ARTILLERY"
+            END-IF.
+            IF SSUBMARINE-TRUE IN ARMYINUSE
+                DISPLAY "SUPER SUBMARINES"
+            END-IF.
+            IF JETFIGHTER-TRUE IN ARMYINUSE
+                DISPLAY "IMPROVED JET FIGHTERS"
+            END-IF.
+            IF IMPRVDSHIP-TRUE IN ARMYINUSE
+                DISPLAY "IMPROVED SHIPYARDS"
+            END-IF.
+            IF AAGUNRADAR-TRUE IN ARMYINUSE
+                DISPLAY "AA GUN RADAR"
+            END-IF.
+            IF HEAVYBOMBR-TRUE IN ARMYINUSE
+                DISPLAY "HEAVY BOMBERS"
+            END-IF.
 
        PRINTUNAME.
            PERFORM PRINTUNAMEHELPER VARYING UIDX FROM 1 BY 1 UNTIL UIDX > 14.
 
        PRINTUNAMEHELPER.
            DISPLAY UIDX ". " UNITS(UIDX).
+
+       BATTLEMENU.
+           DISPLAY "0. GO BACK"
+           DISPLAY "1. PREDICTED BATTLE"
+           DISPLAY "2. SIMULATED BATTLE"
+           ACCEPT BATTCHOOSEVAR.
+
+           EVALUATE BATTCHOOSEVAR
+              WHEN 1
+                PERFORM PREDICTBATTLE
+              WHEN 2
+                PERFORM SIMBATTLE
+           END-EVALUATE.
+
+       SEAATTACK.
