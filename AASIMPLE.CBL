@@ -84,27 +84,26 @@
                03 HEAVYBOMBR PIC X.
                    88 HEAVYBOMBR-TRUE VALUE 'Y'.
 
-       77 CHOOSEVAR     PIC 99.
-       77 MAINCHOOSEVAR PIC 99 VALUE 1.
-       77 ARMYCHOOSEVAR PIC 99 VALUE 1.
-       77 BATTCHOOSEVAR PIC 99 VALUE 1.
-       77 IDX           PIC 99.
-       77 UIDX          PIC 99.
 
        01 WORKING-MEMORY
+      * Menu vars
             02 CHOOSEVAR     PIC 99.
             02 MAINCHOOSEVAR PIC 99 VALUE 1.
             02 ARMYCHOOSEVAR PIC 99 VALUE 1.
             02 BATTCHOOSEVAR PIC 99 VALUE 1.
+            02 YNVAR PIC X.
+                88 YNVAL YNVAL 'Y'
+      * UIDX - for bottom level iterations, like displaying unit lists
             02 IDX           PIC 99.
             02 UIDX          PIC 99.
             02 UNIT-INFO
+      * To be used for storing information about a specific unit
                 03 UNITID        PIC 99.
                 03 UNITCOST      PIC 99.
                 03 UNITATTK      PIC 99.
                 03 UNITDEF       PIC 99.
-            02 YNVAR PIC X.
-                88 YNVAL YNVAL 'Y'
+            02 MISC          PIC 99.
+            02 MISCDEC       PIC 99.99.
 
        PROCEDURE DIVISION.
        MOVE 'INFANTRY' TO UNITS(1)
@@ -166,6 +165,7 @@
          DISPLAY "7. EDIT ARMY TROOPCOUNTS"
          DISPLAY "8. EDIT ARMY TECHNOLOGY/SPECIAL POLICIES"
          DISPLAY "9. EDIT ARMY REMOVAL PRIORITIZATION ORDER"
+         DISPLAY "10. RESEARCH DICE SIMULATOR"
          DISPLAY "> ".
          ACCEPT ARMYCHOOSEVAR.
 
@@ -184,7 +184,20 @@
                 PERFORM GETSPECIAL
             WHEN 9
                 PERFORM GETORDER
+            WHEN 10
+                PERFORM RESEARCHDICE
         END-EVALUATE.
+
+       RESEARCHDICE.
+            DISPLAY "ENTER NUMBER OF RESEARCH DICE PURCHASED"
+            DISPLAY "> "
+            ACCEPT MISC
+            PERFORM VARYING UIDX FROM 1 BY 1 UNTIL UIDX > 8
+                COMPUTE MISCDEC = (1 - ((6-MISC)/6)**UIDX)
+                DISPLAY 'CHANCE AFTER 'UIDX' ROUNDS: 'MISCDEC
+            END-PERFORM
+            DISPLAY "PRESS ENTER TO CONTINUE..."
+            ACCEPT MISC
 
 
        BUILDARMY.
@@ -343,21 +356,53 @@
                 WHEN 6
                     SET UNITCOST TO 12
                 WHEN 7
-                    SET UNITCOST TO 6
+                    IF IMPRVDSHIP-TRUE IN ARMYINUSE THEN
+                        SET UNITCOST TO 5
+                    ELSE
+                        SET UNITCOST TO 6
+                    END-IF
                 WHEN 8
-                    SET UNITCOST TO 7
+                    IF IMPRVDSHIP-TRUE IN ARMYINUSE THEN
+                        SET UNITCOST TO 6
+                    ELSE
+                        SET UNITCOST TO 7
+                    END-IF
                 WHEN 9
-                    SET UNITCOST TO 8
+                    IF IMPRVDSHIP-TRUE IN ARMYINUSE THEN
+                        SET UNITCOST TO 7
+                    ELSE
+                        SET UNITCOST TO 8
+                    END-IF
                 WHEN 10
-                    SET UNITCOST TO 12
+                    IF IMPRVDSHIP-TRUE IN ARMYINUSE THEN
+                        SET UNITCOST TO 12
+                    ELSE
+                        SET UNITCOST TO 10
+                    END-IF
                 WHEN 11
-                    SET UNITCOST TO 14
+                    IF IMPRVDSHIP-TRUE IN ARMYINUSE THEN
+                        SET UNITCOST TO 11
+                    ELSE
+                        SET UNITCOST TO 14
+                    END-IF
                 WHEN 12
-                    SET UNITCOST TO 14
+                    IF IMPRVDSHIP-TRUE IN ARMYINUSE THEN
+                        SET UNITCOST TO 11
+                    ELSE
+                        SET UNITCOST TO 14
+                    END-IF
                 WHEN 13
-                    SET UNITCOST TO 20
+                    IF IMPRVDSHIP-TRUE IN ARMYINUSE THEN
+                        SET UNITCOST TO 20
+                    ELSE
+                        SET UNITCOST TO 17
+                    END-IF
                 WHEN 14
-                    SET UNITCOST TO 20
+                    IF IMPRVDSHIP-TRUE IN ARMYINUSE THEN
+                        SET UNITCOST TO 20
+                    ELSE
+                        SET UNITCOST TO 17
+                    END-IF
             END-EVALUATE.
 
         GETATTACK.
@@ -371,11 +416,19 @@
                 WHEN 4
                     SET UNITATTK TO 0
                 WHEN 5
-                    SET UNITATTK TO 3
+                    IF JETFIGHTER-TRUE IN ARMYINUSE THEN
+                        SET UNITATTK TO 4
+                    ELSE
+                        SET UNITATTK TO 3
+                    END-IF
                 WHEN 6
                     SET UNITATTK TO 6
                 WHEN 7
-                    SET UNITATTK TO 2
+                    IF SSUBMARINE-TRUE IN ARMYINUSE THEN
+                        SET UNITATTK TO 3
+                    ELSE
+                        SET UNITATTK TO 2
+                    END-IF
                 WHEN 8
                     SET UNITATTK TO 0
                 WHEN 9
@@ -401,7 +454,11 @@
                 WHEN 3
                     SET UNITDEF TO 3
                 WHEN 4
-                    SET UNITDEF TO 0
+                    IF AAGUNRADAR-TRUE IN ARMYINUSE THEN
+                        SET UNITDEF TO 2
+                    ELSE
+                        SET UNITDEF TO 1
+                    END-IF
                 WHEN 5
                     SET UNITDEF TO 4
                 WHEN 6
