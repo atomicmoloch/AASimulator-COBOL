@@ -11,9 +11,9 @@
        01 BATTLEINFO
             02 BATTLETYPE  PIC X.
                88 LAND-TRUE VALUE '1'.
-               88 SEA-TRUE  VALUE  '2'.
-      * Note: if sea units are added in a land battle, assumes amphib assault
-      * If land units added in sea battle, assumed carried on transport
+               88 SEA-TRUE  VALUE '2'.
+               88 AMPH-TRUE VALUE '3'.
+      * Note: If land units added in sea battle, assumed carried on transport
             02 SIMBATTLE
                 03 SIMBATTLEROUNDS PIC 999999999.
                 03 ATTKVICTORIES   PIC 999999999.
@@ -91,8 +91,20 @@
        77 IDX           PIC 99.
        77 UIDX          PIC 99.
 
-       02 YNVAR PIC X.
-           88 YNVAL YNVAL 'Y'
+       01 WORKING-MEMORY
+            02 CHOOSEVAR     PIC 99.
+            02 MAINCHOOSEVAR PIC 99 VALUE 1.
+            02 ARMYCHOOSEVAR PIC 99 VALUE 1.
+            02 BATTCHOOSEVAR PIC 99 VALUE 1.
+            02 IDX           PIC 99.
+            02 UIDX          PIC 99.
+            02 UNIT-INFO
+                03 UNITID        PIC 99.
+                03 UNITCOST      PIC 99.
+                03 UNITATTK      PIC 99.
+                03 UNITDEF       PIC 99.
+            02 YNVAR PIC X.
+                88 YNVAL YNVAL 'Y'
 
        PROCEDURE DIVISION.
        MOVE 'INFANTRY' TO UNITS(1)
@@ -261,7 +273,7 @@
        PRINTARMYORDER.
             DISPLAY "ORDER OF TROOPS TO REMOVE"
             PERFORM VARYING IDX FROM 1 BY 1 UNTIL IDX > 14
-                DISPLAY IDX ". " TROOPS(POLICY(IDX))
+                DISPLAY IDX ". " TROOPS(POLICY(IDX)) IN ARMYINUSE
             END-PERFORM.
 
        PRINTSPECIAL.
@@ -298,6 +310,7 @@
            DISPLAY "0. GO BACK"
            DISPLAY "1. PREDICTED BATTLE"
            DISPLAY "2. SIMULATED BATTLE"
+           DISPLAY "> "
            ACCEPT BATTCHOOSEVAR.
 
            EVALUATE BATTCHOOSEVAR
@@ -306,5 +319,134 @@
               WHEN 2
                 PERFORM SIMBATTLE
            END-EVALUATE.
+
+       PREDICTBATTLE.
+            DISPLAY "1. LAND BATTLE"
+            DISPLAY "2. SEA BATTLE"
+            DISPLAY "3. AMPHIBIOUS ASSAULT"
+            DISPLAY "> "
+            ACCEPT BATTLETYPE
+
+
+        GETCOST.
+            EVALUATE UNITID
+                WHEN 1
+                    SET UNITCOST TO 3
+                WHEN 2
+                    SET UNITCOST TO 4
+                WHEN 3
+                    SET UNITCOST TO 5
+                WHEN 4
+                    SET UNITCOST TO 6
+                WHEN 5
+                    SET UNITCOST TO 10
+                WHEN 6
+                    SET UNITCOST TO 12
+                WHEN 7
+                    SET UNITCOST TO 6
+                WHEN 8
+                    SET UNITCOST TO 7
+                WHEN 9
+                    SET UNITCOST TO 8
+                WHEN 10
+                    SET UNITCOST TO 12
+                WHEN 11
+                    SET UNITCOST TO 14
+                WHEN 12
+                    SET UNITCOST TO 14
+                WHEN 13
+                    SET UNITCOST TO 20
+                WHEN 14
+                    SET UNITCOST TO 20
+            END-EVALUATE.
+
+        GETATTACK.
+            EVALUATE UNITID
+                WHEN 1
+                    SET UNITATTK TO 1
+                WHEN 2
+                    SET UNITATTK TO 2
+                WHEN 3
+                    SET UNITATTK TO 3
+                WHEN 4
+                    SET UNITATTK TO 0
+                WHEN 5
+                    SET UNITATTK TO 3
+                WHEN 6
+                    SET UNITATTK TO 6
+                WHEN 7
+                    SET UNITATTK TO 2
+                WHEN 8
+                    SET UNITATTK TO 0
+                WHEN 9
+                    SET UNITATTK TO 2
+                WHEN 10
+                    SET UNITATTK TO 3
+                WHEN 11
+                    SET UNITATTK TO 1
+                WHEN 12
+                    SET UNITATTK TO 1
+                WHEN 13
+                    SET UNITATTK TO 4
+                WHEN 14
+                    SET UNITATTK TO 4
+            END-EVALUATE.
+
+        GETDEFENSE.
+            EVALUATE UNITID
+                WHEN 1
+                    SET UNITDEF TO 2
+                WHEN 2
+                    SET UNITDEF TO 2
+                WHEN 3
+                    SET UNITDEF TO 3
+                WHEN 4
+                    SET UNITDEF TO 0
+                WHEN 5
+                    SET UNITDEF TO 4
+                WHEN 6
+                    SET UNITDEF TO 1
+                WHEN 7
+                    SET UNITDEF TO 1
+                WHEN 8
+                    SET UNITDEF TO 0
+                WHEN 9
+                    SET UNITDEF TO 2
+                WHEN 10
+                    SET UNITDEF TO 3
+                WHEN 11
+                    SET UNITDEF TO 2
+                WHEN 12
+                    SET UNITDEF TO 2
+                WHEN 13
+                    SET UNITDEF TO 4
+                WHEN 14
+                    SET UNITDEF TO 4
+            END-EVALUATE.
+
+
+
+
+        CALCULATECOST.
+
+
+        CALCULATEATTACK.
+
+        CALCULATEDEFENSE.
+
+        REMOVELANDUNIT.
+
+
+        REMOVESEAUNITS.
+
+
+        REMOVETRANSPORTUNITS.
+            IF (TROOPS(01) IN ARMYINUSE > 0) THEN
+                SUBTRACT 1 FROM TROOPS(01)
+                PERFORM REMOVELANDUNIT
+            ELSE
+                PERFORM REMOVELANDUNIT 2 TIMES
+            END-IF.
+
 
        SEAATTACK.
