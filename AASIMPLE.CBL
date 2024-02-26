@@ -86,24 +86,31 @@
 
 
        01 WORKING-MEMORY
-      * Menu vars
-            02 CHOOSEVAR     PIC 99.
-            02 MAINCHOOSEVAR PIC 99 VALUE 1.
-            02 ARMYCHOOSEVAR PIC 99 VALUE 1.
-            02 BATTCHOOSEVAR PIC 99 VALUE 1.
-            02 YNVAR PIC X.
+          02 MENUVARS.
+            03 CHOOSEVAR     PIC 99.
+            03 MAINCHOOSEVAR PIC 99 VALUE 1.
+            03 ARMYCHOOSEVAR PIC 99 VALUE 1.
+            03 BATTCHOOSEVAR PIC 99 VALUE 1.
+            03 YNVAR PIC X.
                 88 YNVAL YNVAL 'Y'
+          02 INDEXVARS.
       * UIDX - for bottom level iterations, like displaying unit lists
-            02 IDX           PIC 99.
-            02 UIDX          PIC 99.
-            02 UNIT-INFO
+            03 IDX           PIC 99.
+            03 UIDX          PIC 99.
+          02 UNIT-INFO.
       * To be used for storing information about a specific unit
                 03 UNITID        PIC 99.
                 03 UNITCOST      PIC 99.
-                03 UNITATTK      PIC 99.
+                03 UNITATTK      PIC 99.9.
                 03 UNITDEF       PIC 99.
             02 MISC          PIC 99.
             02 MISCDEC       PIC 99.99.
+            02 DICE.
+                03 RANDOMRAW     PIC 9.99.
+                03 DICEROLL      PIC 9.
+            02 PREDICTBATTLE.
+                03 UNROUNDED 9999.99.
+                03 ROUNDED   9999.
 
        PROCEDURE DIVISION.
        MOVE 'INFANTRY' TO UNITS(1)
@@ -422,7 +429,10 @@
                         SET UNITATTK TO 3
                     END-IF
                 WHEN 6
-                    SET UNITATTK TO 6
+                    IF HEAVYBOMBR-TRUE IN ARMYINUSE THEN
+                        SET UNITATTK TO 5.3
+                    ELSE
+                        SET UNITATTK TO 4
                 WHEN 7
                     IF SSUBMARINE-TRUE IN ARMYINUSE THEN
                         SET UNITATTK TO 3
@@ -507,3 +517,9 @@
 
 
        SEAATTACK.
+
+
+       GETDICEROLL.
+            COMPUTE RANDOMRAW = FUNCTION RANDOM
+            COMPUTE DICEROLL ROUNDED = RANDOMRAW TIMES 6
+
