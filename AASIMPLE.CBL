@@ -103,6 +103,12 @@
                 03 UNITCOST      PIC 99.
                 03 UNITATTK      PIC 99.9.
                 03 UNITDEF       PIC 99.
+            02 ARMY-INFO.
+                03 SUMCOST        PIC 99999.
+                03 SUMCOST-ATTK-1 PIC 99999.
+                03 SUMCOST-ATTK-2 PIC 99999.
+                03 SUMCOST-DEF-1  PIC 99999.
+                03 SUMCOST-DEF-2  PIC 99999.
             02 MISC          PIC 99.
             02 MISCDEC       PIC 99.99.
             02 DICE.
@@ -111,6 +117,8 @@
             02 PREDICTBATTLE.
                 03 UNROUNDED 9999.99.
                 03 ROUNDED   9999.
+            02 REMOVEUNITS
+                03 HITSTAKEN
 
        PROCEDURE DIVISION.
        MOVE 'INFANTRY' TO UNITS(1)
@@ -240,11 +248,11 @@
 
        GETUNITS.
            DISPLAY "ENTER UNIT TROOPCOUNT VALUES".
-           PERFORM GETUNIT-HELPER VARYING IDX FROM 1 BY 1 UNTIL IDX > 14.
-       GETUNIT-HELPER.
-           DISPLAY "HOW MANY " UNITS(IDX)" UNITS? ".
-           DISPLAY "> "
-           ACCEPT TROOPS(IDX) IN ARMYINUSE
+           PERFORM VARYING IDX FROM 1 BY 1 UNTIL IDX > 14
+                DISPLAY "HOW MANY " UNITS(IDX)" UNITS? "
+                DISPLAY "> "
+                ACCEPT TROOPS(IDX) IN ARMYINUSE
+            END-PERFORM.
 
        GETORDER.
            DISPLAY "CHOOSE POLICY FOR REMOVING UNITS".
@@ -321,10 +329,9 @@
             END-IF.
 
        PRINTUNAME.
-           PERFORM PRINTUNAMEHELPER VARYING UIDX FROM 1 BY 1 UNTIL UIDX > 14.
-
-       PRINTUNAMEHELPER.
-           DISPLAY UIDX ". " UNITS(UIDX).
+           PERFORM VARYING UIDX FROM 1 BY 1 UNTIL UIDX > 14
+                DISPLAY UIDX ". " UNITS(UIDX).
+           END-PERFORM.
 
        BATTLEMENU.
            DISPLAY "0. GO BACK"
@@ -431,6 +438,7 @@
                 WHEN 6
                     IF HEAVYBOMBR-TRUE IN ARMYINUSE THEN
                         SET UNITATTK TO 5.3
+      * Calculated equivalent probability of hitting with two dice rolls
                     ELSE
                         SET UNITATTK TO 4
                 WHEN 7
@@ -492,28 +500,64 @@
             END-EVALUATE.
 
 
-
-
         CALCULATECOST.
+            SET SUMCOST TO 0.
+            PERFORM VARYING UNITID FROM 1 BY 1 UNTIL UNITID > 14
+                PERFORM GETCOST
+                COMPUTE SUMCOST = SUMCOST + UNITCOST
+            END-PERFORM.
+
+        REMOVEUNIT.
+            IF UNITID = 4
+       *# Indicates that army is empty
+
+            ELSE
+                IF TROOPS(UNITID) > HITSTAKEN
+                    COMPUTE TROOPS(UNITID) = TROOPS(UNITID) - HITSTAKEN
+                    IF UNITID = 11 OR UNITID = 13
+                        COMPUTE TROOPS(UNITID + 1) IN ARMYINUSE = TROOPS(UNITID + 1) IN ARMYINUSE + HITSTAKEN
+                    END-IF
+                    SET HITSTAKEN TO 0
+
+                ELSE
+                    COMPUTE HITSTAKEN = HITSTAKEN - TROOPS(UNITID)
+                    IF UNITID = 11 OR UNITID = 13
+                        COMPUTE TROOPS(UNITID + 1) IN ARMYINUSE = TROOPS(UNITID + 1) IN ARMYINUSE + TROOPS(UNITID)
+                    END-IF
+                    SET TROOPS(UNITID) TO 0
+                END-IF
+            END-IF.
 
 
-        CALCULATEATTACK.
-
-        CALCULATEDEFENSE.
-
-        REMOVELANDUNIT.
+        REMOVELANDUNITS.
+            SET UIDX TO 0
+            PERFORM UNTIL HITSTAKEN = 0
+                MOVE POLICY (UIDX) IN ARMYINUSE TO UNITID
+                IF UNITID < 7
+                    PERFORM REMOVEUNIT
+                END-IF
+            END-PERFORM.
 
 
         REMOVESEAUNITS.
+            SET UIDX TO 0
+            PERFORM UNTIL HITSTAKEN = 0
+                MOVE POLICY (UIDX) IN ARMYINUSE TO UNITID
+                IF UNITID > 3
+                    PERFORM REMOVEUNIT
+                END-IF
+            END-PERFORM.
 
+        COUNTLANDUNITS.
+            SET MISC TO 0.
+            PERFORM VARYING UIDX FROM 1 BY 1 UNTIL UIDX > 3
+                COMPUTE MISC = MISC + TROOPS (UIDX) IN ARMYINUSE
+            END-PERFORM
 
         REMOVETRANSPORTUNITS.
-            IF (TROOPS(01) IN ARMYINUSE > 0) THEN
-                SUBTRACT 1 FROM TROOPS(01)
-                PERFORM REMOVELANDUNIT
-            ELSE
-                PERFORM REMOVELANDUNIT 2 TIMES
-            END-IF.
+            PERFORM COUNTLANDUNITS
+            COMPUTE HITSTAKEN = MISC - 2 * TROOPS (08) IN ARMYINUSE
+            PERFORM REMOVELANDUNITS
 
 
        SEAATTACK.
